@@ -8,14 +8,14 @@ app:
     namespace: istio-system
     issuer:
       group: cert-manager.io
-      kind: Issuer
-      name: istio-ca
+      kind: ClusterIssuer
+      name: vault-issuer
   controller:
     configmapNamespaceSelector: "maistra.io/member-of=istio-system"
     leaderElectionNamespace: istio-system
   istio:
     namespace: istio-system
-    revisions: ["basic"] # This must match the name of the SMCP
+    revisions: ["basic"]
   server:
     maxCertificateDuration: 5m
   tls:
@@ -26,7 +26,7 @@ app:
 volumes:
 - name: istio-root-ca
   secret:
-    secretName: istio-root-ca
+    secretName: istio-root-ca # This name of this secret should be the same as created above
 volumeMounts:
 - name: istio-root-ca
   mountPath: /var/certs

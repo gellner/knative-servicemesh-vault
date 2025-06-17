@@ -99,10 +99,6 @@ metadata:
   namespace: istio-system  
 spec:  
   members:   
-    - knative-serving  
-    - knative-eventing  
-    - getestproj
-    - mikel-serverless-mesh
     - httpbin
 
 
