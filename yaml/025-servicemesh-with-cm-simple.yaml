@@ -43,7 +43,7 @@ spec:
     identity:
       type: ThirdParty
     # controlPlane:
-    #   mtls: true      
+    #   mtls: true
     dataPlane:
       mtls: true 
   telemetry:
@@ -98,21 +98,17 @@ metadata:
   name: default  
   namespace: istio-system  
 spec:  
-  members:   
-    - knative-serving  
-    - knative-eventing  
-    - getestproj
-    - mikel-serverless-mesh
+  members:
     - httpbin
 
 
-
+## Simple test apps (not knative)
 # oc new-project httpbin
 # oc create -n httpbin -f https://raw.githubusercontent.com/maistra/istio/maistra-2.4/samples/httpbin/httpbin.yaml
 # oc create -n httpbin -f https://raw.githubusercontent.com/maistra/istio/maistra-2.4/samples/sleep/sleep.yaml
 
 # oc -n httpbin exec "$(oc -n httpbin get pod -l app=sleep -o jsonpath={.items..metadata.name})" -c istio-proxy -- openssl s_client -CAfile /var/run/secrets/istio/root-cert.pem -showcerts -connect httpbin:8000
-
+# Expect "Verification: OK"
 
 # oc exec "$(oc get pod -l app=sleep -n httpbin -o jsonpath={.items..metadata.name})" -c sleep -n httpbin -- curl http://httpbin:8000/ip -s -o /dev/null -w "%{http_code}\n"
 # Expect 200

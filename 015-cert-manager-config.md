@@ -104,6 +104,16 @@ Ref: https://developers.redhat.com/articles/2023/08/24/integrate-openshift-servi
 
 
 
+
+
+
+
+
+
+
+
+
+
 ### Configure istio-csr deployment
 
 (This must happen before Service Mesh configuration is performed)
@@ -151,26 +161,6 @@ volumes:
 volumeMounts:
 - name: istio-root-ca
   mountPath: /var/certs
-
-```
-
-```bash
-helm repo add jetstack https://charts.jetstack.io
-
-helm install istio-csr jetstack/cert-manager-istio-csr -n istio-system -f ./vault-istio-csr-values.yaml
-```
-
-
-Once the istio-csr deployment is Ready, there should be a certificate created and issued:
-
-```bash
-$ oc get Certificate -owide
-NAME     READY   SECRET       ISSUER         STATUS                                          AGE
-istiod   True    istiod-tls   vault-issuer   Certificate is up to date and has not expired   82s
-
-$ oc get secret istiod-tls -owide
-NAME         TYPE                DATA   AGE
-istiod-tls   kubernetes.io/tls   3      88s
 
 ```
 
