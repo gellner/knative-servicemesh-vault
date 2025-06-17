@@ -109,40 +109,10 @@ Ref: https://developers.redhat.com/articles/2023/08/24/integrate-openshift-servi
 (This must happen before Service Mesh configuration is performed)
 
 ```bash
+$ oc new-project istio-system
+$ oc project istio-system
 $ oc create secret generic istio-root-ca --from-file ca.pem=./RH_Custom_CA.crt -n istio-system
 
-```
-
-
-Make a CA Certificate for Istio to Use to issue service names
-
-
-```yaml
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: istio-ca
-  namespace: istio-system
-spec:
-  secretName: istio-ca
-  duration: 720h
-  renewBefore: 360h
-  subject:
-    organizations:
-      - cluster.local
-      - cert-manager
-      - kubernetes.default.svc
-  commonName: istio-ca
-  isCA: true
-  privateKey:
-    algorithm: RSA
-    encoding: PKCS1
-    size: 2048
-  issuerRef:
-    name: vault-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
 ```
 
 
@@ -152,14 +122,15 @@ spec:
 replicaCount: 1
 image:
   repository: quay.io/jetstack/cert-manager-istio-csr
-  tag: v0.6.0
+  #tag: v0.6.0
+  tag: v0.14.1
 app:
   certmanager:
     namespace: istio-system
     issuer:
       group: cert-manager.io
-      kind: Issuer
-      name: istio-ca
+      kind: ClusterIssuer
+      name: vault-issuer
   controller:
     configmapNamespaceSelector: "maistra.io/member-of=istio-system"
     leaderElectionNamespace: istio-system

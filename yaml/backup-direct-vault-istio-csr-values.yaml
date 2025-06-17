@@ -1,0 +1,32 @@
+replicaCount: 1
+image:
+  repository: quay.io/jetstack/cert-manager-istio-csr
+  #tag: v0.6.0
+  tag: v0.14.1
+app:
+  certmanager:
+    namespace: istio-system
+    issuer:
+      group: cert-manager.io
+      kind: ClusterIssuer
+      name: vault-issuer
+  controller:
+    configmapNamespaceSelector: "maistra.io/member-of=istio-system"
+    leaderElectionNamespace: istio-system
+  istio:
+    namespace: istio-system
+    revisions: ["basic"]
+  server:
+    maxCertificateDuration: 5m
+  tls:
+    rootCAFile: /var/certs/ca.pem
+    certificateDNSNames:
+    # This DNS name must be set in the SMCP spec.security.certificateAuthority.cert-manager.address
+    - cert-manager-istio-csr.istio-system.svc
+volumes:
+- name: istio-root-ca
+  secret:
+    secretName: istio-root-ca # This name of this secret should be the same as created above
+volumeMounts:
+- name: istio-root-ca
+  mountPath: /var/certs

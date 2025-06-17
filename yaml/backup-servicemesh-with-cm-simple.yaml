@@ -42,8 +42,8 @@ spec:
       type: cert-manager
     identity:
       type: ThirdParty
-    # controlPlane:
-    #   mtls: true      
+    controlPlane:
+      mtls: true      
     dataPlane:
       mtls: true 
   telemetry:

@@ -5,7 +5,7 @@
 
 ````bash
 oc delete project httpbin
-oc delete -f servicemesh-with-cm-simple.yaml        # Or similar file
+oc delete -f ./yaml/servicemesh-with-cm-simple.yaml        # Or similar file
 helm uninstall istio-csr -n istio-system 
 
 
