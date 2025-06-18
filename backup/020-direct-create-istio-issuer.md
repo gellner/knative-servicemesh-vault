@@ -1,18 +1,11 @@
-# Create SA and Issuer for istio-csr
-
-This configures an Issuer that targets the `pki/root/sign-intermediate` vault path and creates a intermediate CA cert specifically for istio to use when issuing service SPIFFE certs.
-
-```bash
-oc new-project istio-system
-oc apply -f yaml/020-istio-ca-and-issuer.yaml
-```
-
-
 # Install istio-csr
+
+The following procedure creates certificates using the ClusterIssuer that has already been created in the previous step.
 
 Create a secret containing the Root CA for the Vault PKI (generated during the `vault-pki-config.sh` script run)
 
 ```bash
+oc new-project istio-system
 oc create secret generic istio-root-ca --from-file ca.pem=./RH_Custom_CA.crt -n istio-system
 ```
 
@@ -30,7 +23,6 @@ Once the istio-csr deployment is Ready, there should be a `istiod` certificate c
 ```bash
 $ oc get Certificate -owide
 NAME       READY   SECRET       ISSUER                      STATUS                                          AGE
-istio-ca   True    istio-ca     istio-intermediate-issuer   Certificate is up to date and has not expired   5m39s
 istiod     True    istiod-tls   istio-ca                    Certificate is up to date and has not expired   4m31s
 
 $ oc get secret istiod-tls -owide
