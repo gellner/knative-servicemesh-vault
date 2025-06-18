@@ -6,13 +6,17 @@ metadata:
   name: knative-tutorial-greeter  
   namespace: serverless-test-apps
   annotations:  
-    serving.knative.openshift.io/enablePassthrough: "true"   
+    serving.knative.openshift.io/enablePassthrough: "true"
 spec:  
   template:  
     metadata:  
       annotations:  
         sidecar.istio.io/inject: "true"   
         sidecar.istio.io/rewriteAppHTTPProbers: "true"  
+        autoscaling.knative.dev/maxScale: '10'
+        autoscaling.knative.dev/minScale: '2'
+        autoscaling.knative.dev/target: '10'
+        autoscaling.knative.dev/target-utilization-percentage: '1'
     spec:  
       containers:  
       - image: quay.io/rhdevelopers/knative-tutorial-greeter:quarkus
@@ -26,7 +30,7 @@ metadata:
   name: knative-showcase
   namespace: serverless-test-apps
   annotations:  
-    serving.knative.openshift.io/enablePassthrough: "true"   
+    serving.knative.openshift.io/enablePassthrough: "true"
 spec:  
   template:  
     metadata:  
@@ -37,21 +41,21 @@ spec:
       containers:  
       - image: quay.io/openshift-knative/showcase:latest
 
-# Test app 3
----
-apiVersion: serving.knative.dev/v1  
-kind: Service  
-metadata:  
-  name: nodejs-serverless
-  namespace: serverless-test-apps
-  annotations:  
-    serving.knative.openshift.io/enablePassthrough: "true"   
-spec:  
-  template:  
-    metadata:  
-      annotations:  
-        sidecar.istio.io/inject: "true"   
-        sidecar.istio.io/rewriteAppHTTPProbers: "true"  
-    spec:  
-      containers:  
-      - image: quay.io/gellner/nodejs-serverless:1.0
+# Test app 3 ... -takes ages for the app container the shutdown ...
+# ---
+# apiVersion: serving.knative.dev/v1  
+# kind: Service  
+# metadata:  
+#   name: nodejs-serverless
+#   namespace: serverless-test-apps
+#   annotations:  
+#     serving.knative.openshift.io/enablePassthrough: "true"   
+# spec:  
+#   template:  
+#     metadata:  
+#       annotations:  
+#         sidecar.istio.io/inject: "true"   
+#         sidecar.istio.io/rewriteAppHTTPProbers: "true"  
+#     spec:  
+#       containers:  
+#       - image: quay.io/gellner/nodejs-serverless:1.0

@@ -26,8 +26,7 @@ oc delete project istio-system knative-eventing knative-serving knative-serving-
 
 ```bash
 
-## Before removing Cert Manager:
-oc delete Certificate wildcard-certs -n getestproj
-oc delete ClusterIssuer vault-issuer
+
+
 
 ```
