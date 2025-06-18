@@ -1,4 +1,4 @@
-
+# Rough way to perform reset between different config attempts
 
 
 
@@ -11,7 +11,7 @@ helm uninstall istio-csr -n istio-system
 
 
 
-# Uninstall operators HERE
+# Uninstall operators HERE if needed
 
 oc delete project istio-system knative-eventing knative-serving knative-serving-ingress openshift-serverless
 
