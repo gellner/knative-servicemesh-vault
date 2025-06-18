@@ -5,6 +5,11 @@ This configures an Issuer that targets the `pki/root/sign-intermediate` vault pa
 ```bash
 oc new-project istio-system
 oc apply -f yaml/020-istio-ca-and-issuer.yaml
+
+oc get Issuer -owide
+NAME                        READY   STATUS                AGE
+istio-ca                    True    Signing CA verified   17s
+istio-intermediate-issuer   True    Vault verified        17s
 ```
 
 

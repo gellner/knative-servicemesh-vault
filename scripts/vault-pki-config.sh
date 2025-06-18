@@ -173,7 +173,7 @@ vault policy write approle_policy ./role-issuer-policy.hcl
 vault auth enable kubernetes
 
 # Create a vault policy for the above created vault PKI role
-vault policy write k8s_policy/role-issuer-policy.hcl
+vault policy write k8s_policy ./role-issuer-policy.hcl
 
 # --> secret_id_ttl=10m: Duration in either an integer number of seconds (3600) or an integer time unit (60m) after which by default any SecretID expires. A value of zero will allow the SecretID to not expire. However, this option may be overridden by the request's 'ttl' field when generating a SecretID.
 # --> token_num_uses=10: The maximum number of times a generated token may be used (within its lifetime); 0 means unlimited. If you require the token to have the ability to create child tokens, you will need to set this value to 0

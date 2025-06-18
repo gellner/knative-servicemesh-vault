@@ -76,9 +76,6 @@ spec:
   vault:
     path: pki_int_ca/sign/rh-custom-issuer
     server: http://vault.vault.svc.cluster.local:8200
-#    caBundleSecretRef: 
-#      name: ca-bundle
-#      key: ca-chain.cert.pem
     auth:
       kubernetes:
         mountPath: /v1/auth/kubernetes
