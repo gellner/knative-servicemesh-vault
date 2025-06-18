@@ -79,8 +79,8 @@ metadata:
   namespace: istio-system
 spec:
   secretName: istio-ca
-  duration: 720h
-  renewBefore: 360h
+  duration: 7200h
+  renewBefore: 3600h
   subject:
     organizations:
       - cluster.local

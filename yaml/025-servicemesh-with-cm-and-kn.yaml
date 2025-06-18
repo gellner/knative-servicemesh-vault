@@ -1,0 +1,164 @@
+# Service Mesh Operator for use with knative testing
+# Ref: https://docs.redhat.com/en/documentation/red_hat_openshift_serverless/1.35/html/integrations/serverless-ossm-setup#serverless-ossm-setup_integrating-ossm-with-serverless
+
+
+# Certificate for the Ingress Gateway, issued by the general ClusterIssuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-cert
+  namespace: istio-system
+spec:
+  commonName: '*.apps.cluster1.pug50.co.uk'
+  dnsNames:
+    - 'apps.cluster1.pug50.co.uk'  
+    - '*.apps.cluster1.pug50.co.uk'
+  isCA: false
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: vault-issuer
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: wildcard-cert
+  uris:
+    - '*.apps.cluster1.pug50.co.uk'
+
+# ServiceMeshControlPlane for use with Serverless
+---
+apiVersion: maistra.io/v2
+kind: ServiceMeshControlPlane
+metadata:
+  name: basic
+  namespace: istio-system  
+spec:
+  profiles:
+  - default
+  security:
+    dataPlane:
+      mtls: true
+    certificateAuthority:
+      cert-manager:
+        address: 'cert-manager-istio-csr.istio-system.svc:443'
+      type: cert-manager
+    identity:
+      type: ThirdParty
+  techPreview:
+    meshConfig:
+      defaultConfig:
+        # Serverless has a graceful termination for Knative Services of 30 seconds. istio-proxy needs to have a longer termination duration to make sure no requests are dropped. 
+        terminationDrainDuration: 35s
+  gateways:
+    ingress:
+      service:
+        metadata:
+          labels:
+            # Define a specific selector for the ingress gateway to target only the Knative gateway
+            knative: ingressgateway
+  proxy:
+    networking:
+      trafficControl:
+        inbound:
+          # These ports are called by Kubernetes and cluster monitoring, which are not part of the mesh and cannot be called using mTLS. 
+          excludedPorts: 
+          - 8444 # metrics
+          - 8022 # serving: wait-for-drain k8s pre-stop hook
+  telemetry:
+    type: Istiod
+  tracing:
+    type: Jaeger
+    sampling: 100
+  addons:
+    grafana:
+      enabled: true
+    kiali:
+      enabled: true
+      name: kiali
+      install: 
+        dashboard:
+          viewOnly: false
+          enableGrafana: true
+          enableTracing: true
+          enablePrometheus: true
+    jaeger:
+      install:
+        storage:
+          type: Memory
+        ingress:
+          enabled: true
+    prometheus:
+      enabled: true
+
+# List of namespaces to be integrated with Service Mesh. 
+---
+apiVersion: maistra.io/v1  
+kind: ServiceMeshMemberRoll  
+metadata:  
+  name: default  
+  namespace: istio-system  
+spec:  
+  # This list of namespaces must include the knative-serving and knative-eventing namespaces. 
+  members:
+    - knative-serving
+    - knative-eventing
+    - serverless-test-apps
+    - httpbin
+    - client
+
+# Istio Gateways to use with Knative
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: knative-ingress-gateway
+  namespace: knative-serving
+spec:
+  selector:
+    knative: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - "*"
+      tls:
+        mode: SIMPLE
+        credentialName: wildcard-cert
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: knative-local-gateway
+  namespace: knative-serving
+spec:
+  selector:
+    knative: ingressgateway
+  servers:
+    - port:
+        number: 8081
+        name: https
+        protocol: HTTPS 
+      tls:
+        mode: ISTIO_MUTUAL 
+      hosts:
+        - "*"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knative-local-gateway
+  namespace: istio-system
+  labels:
+    experimental.istio.io/disable-gateway-port-translation: "true"
+spec:
+  type: ClusterIP
+  selector:
+    istio: ingressgateway
+  ports:
+    - name: http2
+      port: 80
+      targetPort: 8081

@@ -1,0 +1,57 @@
+# Test app
+---
+apiVersion: serving.knative.dev/v1  
+kind: Service  
+metadata:  
+  name: knative-tutorial-greeter  
+  namespace: serverless-test-apps
+  annotations:  
+    serving.knative.openshift.io/enablePassthrough: "true"   
+spec:  
+  template:  
+    metadata:  
+      annotations:  
+        sidecar.istio.io/inject: "true"   
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"  
+    spec:  
+      containers:  
+      - image: quay.io/rhdevelopers/knative-tutorial-greeter:quarkus
+
+
+# Test app 2
+---
+apiVersion: serving.knative.dev/v1  
+kind: Service  
+metadata:  
+  name: knative-showcase
+  namespace: serverless-test-apps
+  annotations:  
+    serving.knative.openshift.io/enablePassthrough: "true"   
+spec:  
+  template:  
+    metadata:  
+      annotations:  
+        sidecar.istio.io/inject: "true"   
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"  
+    spec:  
+      containers:  
+      - image: quay.io/openshift-knative/showcase:latest
+
+# Test app 3
+---
+apiVersion: serving.knative.dev/v1  
+kind: Service  
+metadata:  
+  name: nodejs-serverless
+  namespace: serverless-test-apps
+  annotations:  
+    serving.knative.openshift.io/enablePassthrough: "true"   
+spec:  
+  template:  
+    metadata:  
+      annotations:  
+        sidecar.istio.io/inject: "true"   
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"  
+    spec:  
+      containers:  
+      - image: quay.io/gellner/nodejs-serverless:1.0

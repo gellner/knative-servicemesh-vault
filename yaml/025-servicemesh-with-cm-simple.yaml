@@ -1,5 +1,5 @@
-# Service Mesh Operator needs to happen AFTER Cert Manager issuer is created.
-## If after, the istio-system namespace needs to be deleted, the Operator Installed and then the namespacerecreated
+# Service Mesh Operator config needs to happen AFTER Cert Manager issuer is created.
+## If after, the istio-system namespace needs to be deleted and recreated
 
 
 ---
@@ -100,6 +100,7 @@ metadata:
 spec:  
   members:
     - httpbin
+    - client
 
 
 ## Simple test apps (not knative)
@@ -117,3 +118,14 @@ spec:
 # INGRESS_HOST=$(oc -n istio-system get routes istio-ingressgateway -o jsonpath='{.spec.host}')
 # curl -s -I http://$INGRESS_HOST/headers -o /dev/null -w "%{http_code}" -s
 # Expect 200
+
+
+
+
+
+##  Multi Namespace
+# oc new-project httpbin client
+# oc create -n client -f https://raw.githubusercontent.com/maistra/istio/maistra-2.4/samples/sleep/sleep.yaml
+# oc create -n httpbin -f https://raw.githubusercontent.com/maistra/istio/maistra-2.4/samples/httpbin/httpbin.yaml
+# oc -n client exec "$(oc -n client get pod -l app=sleep -o jsonpath={.items..metadata.name})" -c istio-proxy -- openssl s_client -CAfile /var/run/secrets/istio/root-cert.pem -showcerts -connect httpbin.httpbin:8000
+# oc exec "$(oc get pod -l app=sleep -n client -o jsonpath={.items..metadata.name})" -c sleep -n client -- curl http://httpbin.httpbin:8000/ip -s -o /dev/null -w "%{http_code}\n"

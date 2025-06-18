@@ -21,7 +21,7 @@ Run a Helm install for the Istio Cert Manager Agent - `istio-csr`:
 ```bash
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
-helm install istio-csr jetstack/cert-manager-istio-csr -n istio-system -f ./yaml/vault-istio-csr-values.yaml
+helm install istio-csr jetstack/cert-manager-istio-csr -n istio-system -f ./yaml/vault-istio-csr-helm-values.yaml
 ```
 
 
