@@ -1,0 +1,32 @@
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: primenumber-go-hpa
+  namespace: serverless-test-apps
+  annotations:  
+    serving.knative.openshift.io/enablePassthrough: "true"
+spec:
+  template:  
+    metadata:  
+      annotations:  
+        sidecar.istio.io/inject: "true"   
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+        autoscaling.knative.dev/class: "hpa.autoscaling.knative.dev"
+        autoscaling.knative.dev/metric: "cpu" # cpu or memory
+        autoscaling.knative.dev/target: '70' # Percentage of the Requested CPU
+        autoscaling.knative.dev/maxScale: '10'
+        autoscaling.knative.dev/minScale: '1' # Must be at least 1 when using hpa scaling
+    spec:  
+      containers:  
+      - image: ghcr.io/knative/autoscale-go:latest
+        resources:
+          requests:
+            cpu: 200m
+            memory: 100Mi
+
+
+
+# HPA Autoscaling creates a regular HorizontalPodAutoscaler object
+# Target is expressed as percentage of the Request - HPA only works when a Request is set 
+# for the metric
