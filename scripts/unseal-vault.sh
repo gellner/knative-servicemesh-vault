@@ -2,9 +2,6 @@
 
 # Run this from the directory that contains the init-keys.json file, while logged into oc cli.
 
-# export VAULT_ADDR=https://vaultui.apps.cluster1.example.com
-# export VAULT_CAPATH="/home/user/clusters/cluster1/ingress.pem"   ## ONLY if route is self-signed
-
 # Set environmental variables for unseal key and root token
 echo "Setting environmental variables for the Unseal Key and the Root Token"
 export VAULT_UNSEAL_KEY=$(cat init-keys.json | jq -r ".unseal_keys_b64[]")
