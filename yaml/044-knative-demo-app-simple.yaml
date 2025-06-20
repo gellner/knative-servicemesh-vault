@@ -1,0 +1,18 @@
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: primenumber-simple-go
+  namespace: serverless-test-apps
+  annotations:
+    serving.knative.openshift.io/enablePassthrough: "true"
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "true"
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    spec:
+      containers:
+      - image: ghcr.io/knative/autoscale-go:latest
+
