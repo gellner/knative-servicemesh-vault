@@ -17,14 +17,13 @@ spec:
         autoscaling.knative.dev/target: '10'  # Concurrent requests per Pod (default is 100)
         autoscaling.knative.dev/maxScale: '8'
         autoscaling.knative.dev/minScale: '0'
-        autoscaling.knative.dev/window: '20s' # Reduce window to speed up demo
+        autoscaling.knative.dev/window: '20s' # Evaluation window - Reduce window to speed up demo
         #autoscaling.knative.dev/activation-scale: "1"         # How many replicas will be created when initially scaling from zero
-        #autoscaling.knative.dev/window: '60s'                 # Evaulation window
         #autoscaling.knative.dev/max-scale-up-rate: "1000"     # Pods can increase 1000x current value in each evaluation "window"
         #autoscaling.knative.dev/max-scale-down-rate: "2"      # One half of current Pods can be stopped in each evaluation "window"
         #autoscaling.knative.dev/scale-down-delay: "0"         # Time to wait before scaling down
     spec:
-      #containerConcurrency: 5    # Optional hard limit on concurrency - causes queuing
+      #containerConcurrency: 5    # Optional hard limit on concurrency - causes queuing at maxScale
       containers:
       - image: ghcr.io/knative/autoscale-go:latest
         resources:
