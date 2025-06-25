@@ -1,8 +1,7 @@
 # Integrating Service Mesh 2, Hashicorp Vault and Knative Serverless
 
 ## Background
-
-This configuration was put in place to test and demo the combination of OpenShift Serverless with Service Mesh, cert manager and HashiCorp Vault.
+This appendix details the configuration that was put in place to test and demo the combination of OpenShift Serverless with Service Mesh, cert manager and HashiCorp Vault.
 
 The demo environment used OpenShift 4.18 running on AWS, and a test HashiCorp Vault running on the cluster itself.
 
@@ -11,7 +10,6 @@ The configuration should be reviewed and enhanced before any part of it is consi
 The procedure uses YAML and supporting files that are hosted on Github at https://github.com/gellner/knative-servicemesh-vault/ 
 
 ## Client workstation requirements
-
 The client workstation that is used to perform the configuration should have the following installed:
 - `oc` - OpenShift CLI Client - can be downloaded from the cluster itself (`https://<webconsoleui>/command-line-tools`) or from https://console.redhat.com/openshift/downloads
 - `helm` - Helm 3 client - can be downloaded from the cluster or via procedures at https://helm.sh/docs/intro/install/ 
@@ -21,7 +19,6 @@ The client workstation that is used to perform the configuration should have the
 - `podman` - available natively on Linux, can be downloaded for Windows or Mac from https://podman-desktop.io/downloads
 
 ## Operator installation
-
 The following operators should be installed:
 
 - cert-manager Operator for Red Hat OpenShift - `cert-manager-operator`
@@ -39,7 +36,6 @@ The operators can be installed using the OperatorHub section of the OpenShift we
 The actual configuration of the Operators will occur in later steps.
 
 ## Install HashiCorp Vault
-
 If an existing HashiCorp Vault isn't available, a demo Vault can be installed onto the cluster using HashiCorp's Helm charts.
 
 Connect to the OCP cluster using `oc login` and then (edit  `server.route.host` so it reflects the actual cluster's apps URL):
@@ -93,7 +89,6 @@ oc project vault
 The script creates CA certificate files (for the vault PKI) and an `init-keys.json` file which contains unseal key and a token to allow vault access.
 
 ## Configure Cert Manager
-
 ```bash
 oc apply -f https://github.com/gellner/knative-servicemesh-vault/raw/refs/heads/main/yaml/015-cert-manager-config.yaml
 
@@ -105,11 +100,10 @@ vault-issuer   True    Vault verified   1m
 ```
 
 ## Create Secondary issuer and install Istio cert manager agent
-
 This configures an Issuer that targets the `pki/root/sign-intermediate` vault path and creates a intermediate CA cert specifically for istio to use when issuing service SPIFFE certs.
 ```bash
 oc new-project istio-system
-oc apply -f yaml/020-istio-ca-and-issuer.yaml
+oc apply -f https://raw.githubusercontent.com/gellner/knative-servicemesh-vault/refs/heads/main/yaml/020-istio-ca-and-issuer.yaml
 
 oc get Issuer -owide
 NAME                        READY   STATUS                AGE
@@ -136,6 +130,7 @@ $ oc get secret istiod-tls -owide
 NAME         TYPE                DATA   AGE
 istiod-tls   kubernetes.io/tls   3      88s
 ```
+
 ## Service Mesh configuration
 Create a wildcard cert for the external ingress gateway, a ServiceMeshControlPlane and a ServiceMeshMemberRoll (which includes the namespaces `knative-serving` and `knative-eventing`), and external and local gateways:
 ```bash
@@ -182,14 +177,24 @@ Once deployed, the new Knative Services for the apps can be found in the `server
 
 Knative functions are a development method and CLI tool that allows container images to be easily built in various programming languages for microservices with the intention to run them on Knative (Serving and Eventing).
 
-Configure registry to hold the container images and log in with a user that has push permissions:  
+By default, Knative Functions support the following languages and frameworks (but additional languages can be added using language packs):
+- Node.js
+- Python
+- Go
+- Quarkus
+- Rust
+- Spring Boot
+- TypeScript
 
+Detailed documentation (including development guides for Go, Quarkus, Node.js, TypeScript and Python) can be found in the ["Functions" section of the Red Hat OpenShift Serverless docs](https://docs.redhat.com/en/documentation/red_hat_openshift_serverless/1.36/html-single/functions/index).
+
+Configure the path to an existing registry to hold the container images and log in with a user that has push permissions:  
 ```bash
 export FUNC_REGISTRY=registry.example.com/username
 podman login $FUNC_REGISTRY
 ```
 
-Create an example Python function in the current directory:
+Create an example Python function - it will create a new function directory in the current directory:
 ```bash
 kn func create -l python -t http pytest
 # This is a python example/template that responds to http requests.
@@ -197,7 +202,6 @@ kn func create -l python -t http pytest
 ```
 
 View/Edit/Customise the function to perform the necessary tasks for this microservice function: 
-
 ```bash
 cd pytest
 vi func.py
@@ -214,7 +218,7 @@ Building function image
 Running on host port 8080
 ---> Running application from script (app.sh) ..
 ```
-At this point, `localhost:8080` can be accessed on the workstation in a web browser (or by running curl or the `invoke` sub-command in another shell) - the `kn func run` command will show any logs from the container:
+At this point, `localhost:8080` can be accessed on the workstation in a web browser (or by running curl or the `invoke` sub-command in another shell) - the still-running `kn func run` command will show any logs from the container:
 ```bash
 $ kn func invoke 
 {"message": "Hello World"}
@@ -224,7 +228,7 @@ $ curl http://localhost:8080/?foo=bar
 
 #### Deploy the function on to an OpenShift cluster
 
-Although it is possible to create your own Knative Serving Service on the OpenShift cluster to run the newly built container image, the `kn func` command can do this automatically.
+Although it is possible to use the new image to create your own Knative Serving Service on the OpenShift cluster, the `kn func` command can do this automatically.
 
 However, it is necessary to specify additional annotations to ensure connectivity works with Service Mesh:
 ```bash
@@ -236,7 +240,7 @@ oc patch service.serving.knative.dev pytest -n serverless-test-apps --type="merg
 '{"metadata": {"annotations": {"serving.knative.openshift.io/enablePassthrough":"true"}},"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/inject":"true","sidecar.istio.io/rewriteAppHTTPProbers":"true"}}}}}'
 ```
 
-Alternatively, the `func.yaml` file in the functions directory can have the following added to ensure the annotations are included during the build:
+Alternatively, the `func.yaml` file in the function's directory can have the following added to ensure the annotations are included during the build:
 ```yaml
 deploy:
 # ...
