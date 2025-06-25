@@ -1,13 +1,13 @@
 # Integrating Service Mesh 2, Hashicorp Vault and Knative Serverless
 
 ## Background
-This appendix details the configuration that was put in place to test and demo the combination of OpenShift Serverless with Service Mesh, cert manager and HashiCorp Vault.
-
-The demo environment used OpenShift 4.18 running on AWS, and a test HashiCorp Vault running on the cluster itself.
+This appendix details the configuration that was put in place to test and demo the combination of OpenShift Serverless with Service Mesh, cert manager and HashiCorp Vault. The demo environment used OpenShift 4.18 running on AWS, and a test HashiCorp Vault running on the cluster itself.
 
 The configuration should be reviewed and enhanced before any part of it is considered for use in real environments.
 
 The procedure uses YAML and supporting files that are hosted on Github at https://github.com/gellner/knative-servicemesh-vault/ 
+
+Detailed documentation can be found in the [Red Hat OpenShift Serverless docs](https://docs.redhat.com/en/documentation/red_hat_openshift_serverless/).
 
 ## Client workstation requirements
 The client workstation that is used to perform the configuration should have the following installed:
@@ -38,7 +38,7 @@ The actual configuration of the Operators will occur in later steps.
 ## Install HashiCorp Vault
 If an existing HashiCorp Vault isn't available, a demo Vault can be installed onto the cluster using HashiCorp's Helm charts.
 
-Connect to the OCP cluster using `oc login` and then (edit  `server.route.host` so it reflects the actual cluster's apps URL):
+Connect to the OCP cluster using `oc login` and then (edit  `server.route.host` value so it reflects the actual cluster's \*.apps wildcard URL):
 ```bash
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm repo update
@@ -53,7 +53,7 @@ helm install vault hashicorp/vault \
 --set "server.route.host=vaultui.apps.cluster1.example.com" \
 --set "server.route.tls.termination=edge"
 
-# OR If the cluster doesn't have persistent storage, install an ephemeral vault:
+# OR... If the cluster doesn't have persistent storage, install an ephemeral vault:
 helm install vault hashicorp/vault \
 --set "server.dev.enabled=true" \
 --set "global.openshift=true" \
@@ -72,13 +72,13 @@ wget https://github.com/gellner/knative-servicemesh-vault/raw/refs/heads/main/sc
 chmod 700 ./vault-pki-config.sh
 ```
 
-IF the cluster has a self-signed ingress certificate, it is necessary to download the CA file and configure it for use by the vault CLI command:
+**IF** the cluster has a self-signed ingress certificate, it is necessary to download the CA file and configure it for use by the vault CLI command:
 ```bash
 openssl s_client -showcerts console-openshift-console.apps.cluster1.example.com:443 2>/dev/null< /dev/null | awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/' > self-signed-ca.pem
 export VAULT_CAPATH="$(pwd)/self-signed-ca.pem"
 ```
 
-Configure the vaultui route used during the install and then run the configure script:
+Configure the vaultui route specified during the Vault install and then run the configure script:
 ```bash
 export VAULT_ADDR=https://vaultui.apps.cluster1.example.com
 oc project vault
@@ -173,9 +173,9 @@ oc apply -f https://github.com/gellner/knative-servicemesh-vault/raw/refs/heads/
 Once deployed, the new Knative Services for the apps can be found in the `serverless-test-apps` in the "Serverless ... Serving" section of the OpenShift Web Console.
 
 
-## Testing and building Knative functions
+## Testing Knative functions
 
-Knative functions are a development method and CLI tool that allows container images to be easily built in various programming languages for microservices with the intention to run them on Knative (Serving and Eventing).
+Knative functions are a development method and CLI tool that allows container images to be easily built in various programming languages for microservices with the intention to run them on Knative.
 
 By default, Knative Functions support the following languages and frameworks (but additional languages can be added using language packs):
 - Node.js
@@ -194,21 +194,22 @@ export FUNC_REGISTRY=registry.example.com/username
 podman login $FUNC_REGISTRY
 ```
 
-Create an example Python function - it will create a new function directory in the current directory:
+Create an example Python function called `pytest` - it will create a new function directory which contains the example function plus other necessary files that control the building of the function container image:
 ```bash
 kn func create -l python -t http pytest
 # This is a python example/template that responds to http requests.
-# Alternatively, `-t cloudevents` produces an example function that responds to Events
+# Alternatively, `-t cloudevents` would produce an example function that responds to Events
+# Alternatively, `-l go` would produce an example function in Golang
 ```
 
-View/Edit/Customise the function to perform the necessary tasks for this microservice function: 
+View/Edit/Customise the function to perform the necessary logic for this microservice function: 
 ```bash
 cd pytest
 vi func.py
 # The example function simply return the content of URL parameters in its response as JSON
 ```
 
-#### Test the function on the local workstation
+#### Test the example function on the local workstation
 (runs in podman)
 
 ```bash
@@ -226,7 +227,7 @@ $ curl http://localhost:8080/?foo=bar
 {"foo": "bar"}
 ```
 
-#### Deploy the function on to an OpenShift cluster
+#### Deploy the example function on to an OpenShift cluster
 
 Although it is possible to use the new image to create your own Knative Serving Service on the OpenShift cluster, the `kn func` command can do this automatically.
 
@@ -235,7 +236,7 @@ However, it is necessary to specify additional annotations to ensure connectivit
 # in the pytest directory for the function
 kn func deploy --namespace serverless-test-apps
 
-# Add the annotations necessary for Service mesh
+# Add the annotations necessary for Service Mesh
 oc patch service.serving.knative.dev pytest -n serverless-test-apps --type="merge" -p \
 '{"metadata": {"annotations": {"serving.knative.openshift.io/enablePassthrough":"true"}},"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/inject":"true","sidecar.istio.io/rewriteAppHTTPProbers":"true"}}}}}'
 ```
