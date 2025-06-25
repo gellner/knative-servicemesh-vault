@@ -133,7 +133,7 @@ vault read pki_int_ca/crl/rotate
 #   enforce_hostnames=false \
 #   allow_bare_domains=true \
 #   require_cn=false \
-#   allowed_uri_sans="istio-system.svc, apps.pug50.co.uk, pug50.co.uk, cluster.local, spiffe://*" \
+#   allowed_uri_sans="istio-system.svc, apps.example.com, example.com, cluster.local, spiffe://*" \
 #   allow_subdomains=true 
 
 

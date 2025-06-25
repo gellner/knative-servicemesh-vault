@@ -10,10 +10,10 @@ metadata:
   name: wildcard-cert
   namespace: istio-system
 spec:
-  commonName: '*.apps.cluster1.pug50.co.uk'
+  commonName: '*.apps.cluster1.example.com'
   dnsNames:
-    - 'apps.cluster1.pug50.co.uk'  
-    - '*.apps.cluster1.pug50.co.uk'
+    - 'apps.cluster1.example.com'  
+    - '*.apps.cluster1.example.com'
   isCA: false
   issuerRef:
     group: cert-manager.io
@@ -24,7 +24,7 @@ spec:
     size: 256
   secretName: wildcard-cert
   uris:
-    - '*.apps.cluster1.pug50.co.uk'
+    - '*.apps.cluster1.example.com'
 
 # ServiceMeshControlPlane for use with Serverless
 ---
