@@ -12,78 +12,8 @@ oc patch --type=merge --patch='{"spec":{"trustedCA": {"name": "user-ca-bundle"}}
 
 Configure a ClusterIssuer for deploying general certificates, to check functionality of Vault and to demonstrate Vault auth using Kubernetes Service Accounts:
 
-```yaml
-cat <<EOF|oc apply -f -
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: role-tokenreview-binding
-  namespace: cert-manager
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:auth-delegator
-subjects:
-  - kind: ServiceAccount
-    name: issuer
-    namespace: cert-manager
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: cert-manager-issuer
-  namespace: cert-manager
-rules:
-- apiGroups: ["cert-manager.io"]
-  resources: ["certificates", "certificaterequests"]
-  verbs: ["create", "delete"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: cert-manager-issuer-binding
-  namespace: cert-manager
-subjects:
-- kind: ServiceAccount
-  name: issuer
-  namespace: cert-manager
-roleRef:
-  kind: Role
-  name: cert-manager-issuer
-  apiGroup: rbac.authorization.k8s.io
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: issuer
-  namespace: cert-manager
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: issuer-token
-  namespace: cert-manager
-  annotations:
-    kubernetes.io/service-account.name: issuer
-type: kubernetes.io/service-account-token
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: vault-issuer
-spec:
-  vault:
-    path: pki_int_ca/sign/rh-custom-issuer
-    server: http://vault.vault.svc.cluster.local:8200
-    auth:
-      kubernetes:
-        mountPath: /v1/auth/kubernetes
-        role: issuer
-        secretRef:
-          name: issuer-token
-          key: token
-EOF
+```bash
+oc apply -f yaml/015-cert-manager-config.yaml
 
 
 $ oc get ClusterIssuer -owide
