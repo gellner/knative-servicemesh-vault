@@ -280,7 +280,7 @@ The `kn func invoke` command can also be used to send test events to the functio
 
 ```bash
 $ kn func invoke -v --data='{"message": "Hello from invoke"}' --format=cloudevent --target=remote
-Invoking 'cloudevent' function at https://py-event-display-serverless-test-apps.apps.cluster-r9w5d.r9w5d.sandbox1625.opentlc.com
+Invoking 'cloudevent' function at https://py-event-display-serverless-test-apps.apps.cluster1.example.com
 Invoking 'cloudevent' function using 'cloudevent' format
 Sending event
 # ...
