@@ -12,9 +12,8 @@ Detailed documentation can be found in the [Red Hat OpenShift Serverless docs](h
 ## Client workstation requirements
 The client workstation that is used to perform the configuration should have the following installed:
 - `oc` - OpenShift CLI Client - can be downloaded from the cluster itself (`https://<webconsoleui>/command-line-tools`) or from https://console.redhat.com/openshift/downloads
-- `helm` - Helm 3 client - can be downloaded from the cluster or via procedures at https://helm.sh/docs/intro/install/ 
-- `kn` - Knative CLI Client - can be downloaded from the cluster or from https://console.redhat.com/openshift/downloads or https://knative.dev/docs/client/install-kn/
-- `func` - Knative Functions CLI/plugin - https://knative.dev/docs/functions/install-func/
+- `helm` - Helm 3 client - can be downloaded from the cluster or from https://console.redhat.com/openshift/downloads
+- `kn` - Knative CLI Client - can be downloaded from the cluster or from https://console.redhat.com/openshift/downloads 
 - `vault` - HashiCorp Vault CLI - https://developer.hashicorp.com/vault/tutorials/get-started/install-binary
 - `podman` - available natively on Linux, can be downloaded for Windows or Mac from https://podman-desktop.io/downloads
 
@@ -173,58 +172,81 @@ oc apply -f https://github.com/gellner/knative-servicemesh-vault/raw/refs/heads/
 Once deployed, the new Knative Services for the apps can be found in the `serverless-test-apps` in the "Serverless ... Serving" section of the OpenShift Web Console.
 
 
-## Testing Knative functions
 
-Knative functions are a development method and CLI tool that allows container images to be easily built in various programming languages for microservices with the intention to run them on Knative.
+## Knative Eventing config
 
-By default, Knative Functions support the following languages and frameworks (but additional languages can be added using language packs):
-- Node.js
-- Python
-- Go
-- Quarkus
-- Rust
-- Spring Boot
-- TypeScript
+Create a KnativeEventing that uses Istio:
 
-Detailed documentation (including development guides for Go, Quarkus, Node.js, TypeScript and Python) can be found in the ["Functions" section of the Red Hat OpenShift Serverless docs](https://docs.redhat.com/en/documentation/red_hat_openshift_serverless/1.36/html-single/functions/index).
-
-Configure the path to an existing registry to hold the container images and log in with a user that has push permissions:  
 ```bash
-export FUNC_REGISTRY=registry.example.com/username
-podman login $FUNC_REGISTRY
+oc apply -f https://github.com/gellner/knative-servicemesh-vault/raw/refs/heads/main/yaml/050-knative-eventing.yaml
 ```
 
-Create an example Python function called `pytest` - it will create a new function directory which contains the example function plus other necessary files that control the building of the function container image:
+
+## Testing Knative eventing and functions
+
+Create a `PingSource` event source that tries to send an event every minute:
+
+```yaml
+---
+apiVersion: sources.knative.dev/v1
+kind: PingSource
+metadata:
+  name: cron-source
+  namespace: serverless-test-apps
+spec:
+  schedule: "* * * * *"
+  data: '{"message": "Hello every minute from cron ping"}'
+  sink:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: py-event-display
+```
+
+### Develop a new Knative function
+
+Currently the Service referenced above doesn't exist but we will make a function to receive it...
+
+Optional - Configure the path to an existing registry (eg quay.io) to hold the container images and log in with a user that has push permissions. 
+If this isn't done, the OpenShift cluster's internal registry is used by default, with communication happening via a proxy Pod.
 ```bash
-kn func create -l python -t http pytest
-# This is a python example/template that responds to http requests.
-# Alternatively, `-t cloudevents` would produce an example function that responds to Events
+$ export FUNC_REGISTRY=registry.example.com/username
+$ podman login $FUNC_REGISTRY
+```
+
+Create an example Python function called `py-event-display` - it will create a new function directory which contains the example function plus other necessary files that control the building of the function container image:
+```bash
+kn func create -l python -t cloudevents py-event-display
+# This is a python example/template that responds to cloudevents.
+# Alternatively, `-t http` would produce an example function that responds to raw HTTP requests
 # Alternatively, `-l go` would produce an example function in Golang
 ```
 
 View/Edit/Customise the function to perform the necessary logic for this microservice function: 
 ```bash
-cd pytest
-vi func.py
-# The example function simply return the content of URL parameters in its response as JSON
+cd py-event-display
+vi function/func.py
 ```
 
 #### Test the example function on the local workstation
+
 (runs in podman)
 
 ```bash
 $ kn func run --build
 Building function image
-🙌 Function built: registry.example.com/username/pytest:latest
+🙌 Function built: registry.example.com/username/py-event-display:latest
 Running on host port 8080
 ---> Running application from script (app.sh) ..
 ```
-At this point, `localhost:8080` can be accessed on the workstation in a web browser (or by running curl or the `invoke` sub-command in another shell) - the still-running `kn func run` command will show any logs from the container:
+At this point, the function is available on `localhost:8080` can be accessed on the workstation. For cloudevents, the `kn func invoke` subcommand provides an easy way to generate cloudevents. For HTTP services, curl or a web browser may be used:
 ```bash
-$ kn func invoke 
-{"message": "Hello World"}
-$ curl http://localhost:8080/?foo=bar
-{"foo": "bar"}
+# kn func invoke should be ran from the function directory so it can find how to talk to the function (whether its running locally or on OpenShift)
+$ kn func invoke -v --data='{"message": "Hello from invoke"}' --format=cloudevent
+Invoking 'cloudevent' function at http://localhost:8080/
+Invoking 'cloudevent' function using 'cloudevent' format
+Sending event
+# ...
 ```
 
 #### Deploy the example function on to an OpenShift cluster
@@ -233,11 +255,11 @@ Although it is possible to use the new image to create your own Knative Serving 
 
 However, it is necessary to specify additional annotations to ensure connectivity works with Service Mesh:
 ```bash
-# in the pytest directory for the function
+# in the py-event-display directory for the function
 kn func deploy --namespace serverless-test-apps
 
 # Add the annotations necessary for Service Mesh
-oc patch service.serving.knative.dev pytest -n serverless-test-apps --type="merge" -p \
+oc patch service.serving.knative.dev py-event-display -n serverless-test-apps --type="merge" -p \
 '{"metadata": {"annotations": {"serving.knative.openshift.io/enablePassthrough":"true"}},"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/inject":"true","sidecar.istio.io/rewriteAppHTTPProbers":"true"}}}}}'
 ```
 
@@ -251,3 +273,14 @@ deploy:
     sidecar.istio.io/rewriteAppHTTPProbers: "true"
 ```
 
+#### Test the example function on OpenShift
+
+The `kn func invoke` command can also be used to send test events to the function deployed on OpenShift
+
+```bash
+$ kn func invoke -v --data='{"message": "Hello from invoke"}' --format=cloudevent --target=remote
+Invoking 'cloudevent' function at https://py-event-display-serverless-test-apps.apps.cluster-r9w5d.r9w5d.sandbox1625.opentlc.com
+Invoking 'cloudevent' function using 'cloudevent' format
+Sending event
+# ...
+```
