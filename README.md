@@ -18,7 +18,7 @@ The client workstation that is used to perform the configuration should have the
 - `podman` - available natively on Linux, can be downloaded for Windows or Mac from https://podman-desktop.io/downloads
 
 ## Operator installation
-The following operators should be installed:
+The following operators should be installed on the OpenShift cluster:
 
 - cert-manager Operator for Red Hat OpenShift - `cert-manager-operator`
 - Red Hat OpenShift Serverless - `serverless-operator`
@@ -63,7 +63,7 @@ helm install vault hashicorp/vault \
 --set "server.route.tls.termination=edge"
 ```
 
-Configure vault to run a PKI and provide permissions to Kubernetes service accounts:
+Configure the demo Vault to run a PKI and provide permissions to Kubernetes service accounts:
 ```bash
 mkdir pki-config; cd pki-config
 wget https://github.com/gellner/knative-servicemesh-vault/raw/refs/heads/main/scripts/vault-pki-config.sh
@@ -239,7 +239,7 @@ Building function image
 Running on host port 8080
 ---> Running application from script (app.sh) ..
 ```
-At this point, the function is available on `localhost:8080` can be accessed on the workstation. For cloudevents, the `kn func invoke` subcommand provides an easy way to generate cloudevents. For HTTP services, curl or a web browser may be used:
+At this point, the function is available on `localhost:8080` and can be accessed on the workstation. For cloudevents, the `kn func invoke` subcommand provides an easy way to generate cloudevents. For HTTP services, curl or a web browser may also be used:
 ```bash
 # kn func invoke should be ran from the function directory so it can find how to talk to the function (whether its running locally or on OpenShift)
 $ kn func invoke -v --data='{"message": "Hello from invoke"}' --format=cloudevent
@@ -251,31 +251,32 @@ Sending event
 
 #### Deploy the example function on to an OpenShift cluster
 
-Although it is possible to use the new image to create your own Knative Serving Service on the OpenShift cluster, the `kn func` command can do this automatically.
+Although it is possible to use the new image to manually create your own Knative Serving Service on the OpenShift cluster, the `kn func` command can do this automatically.
 
-However, it is necessary to specify additional annotations to ensure connectivity works with Service Mesh:
-```bash
-# in the py-event-display directory for the function
-kn func deploy --namespace serverless-test-apps
+However, it is necessary to specify additional annotations in `func.yaml` to ensure connectivity works with Service Mesh.
 
-# Add the annotations necessary for Service Mesh
-oc patch service.serving.knative.dev py-event-display -n serverless-test-apps --type="merge" -p \
-'{"metadata": {"annotations": {"serving.knative.openshift.io/enablePassthrough":"true"}},"spec":{"template":{"metadata":{"annotations":{"sidecar.istio.io/inject":"true","sidecar.istio.io/rewriteAppHTTPProbers":"true"}}}}}'
-```
-
-Alternatively, the `func.yaml` file in the function's directory can have the following added to ensure the annotations are included during the build:
+Edit the `func.yaml` file in the function's directory to add the following to ensure the annotations are included during the build. Other deploy options can be configured also:
 ```yaml
-deploy:
 # ...
+deploy:
   annotations:
     serving.knative.openshift.io/enablePassthrough: "true"
     sidecar.istio.io/inject: "true"
     sidecar.istio.io/rewriteAppHTTPProbers: "true"
+  options:
+    scale:
+      min: 1
+```
+
+
+```bash
+# in the py-event-display directory for the function
+kn func deploy --namespace serverless-test-apps
 ```
 
 #### Test the example function on OpenShift
 
-The `kn func invoke` command can also be used to send test events to the function deployed on OpenShift
+The `kn func invoke` command can also be used to send test events to the function deployed on OpenShift. The `--target=remote` option tells the command to send the event to the deployed version of the function, even if the function is also running on the local workstation.
 
 ```bash
 $ kn func invoke -v --data='{"message": "Hello from invoke"}' --format=cloudevent --target=remote
