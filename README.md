@@ -29,7 +29,7 @@ The following operators should be installed:
     - Red Hat OpenShift distributed tracing platform - `jaeger-operator`
 
 > [!NOTE]
-> Service Mesh 3 is currently not supported by OpenShift Serverless as of June 2025)
+> Service Mesh 3 is currently not supported by OpenShift Serverless as of June 2025
 
 The operators can be installed using the OperatorHub section of the OpenShift web console with the default settings.
 
@@ -141,7 +141,7 @@ oc apply -f https://github.com/gellner/knative-servicemesh-vault/raw/refs/heads/
 > [!NOTE]
 > If the cluster already has a signed certificate for its default ingress, it is likely that browser HSTS will make very difficult to use a new certificate from Vault (a private signer) in modern browsers, without putting in place a new DNS entry for the Istio Ingress gateway.
 
-The easiest workaround for demo purposes is to use the default ingress' existing certificate for the external Ingress gateway... ONLY run  blockthis if the \*.apps.cluster1.example.com endpoints have a properly signed cert, and you want to avoid HSTS issues:
+The easiest workaround for demo purposes is to use the default ingress' existing certificate for the external Ingress gateway... ONLY run this block if the \*.apps.cluster1.example.com endpoints have a properly signed cert, and you want to avoid HSTS issues:
 ```bash
 # ONLY run  blockthis if the *.apps.cluster1.example.com endpoints have a properly signed cert, and you want to avoid HSTS issues!
 oc get IngressController default -n openshift-ingress-operator -oyaml | grep -A 1 defaultCertificate

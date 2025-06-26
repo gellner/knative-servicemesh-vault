@@ -29,33 +29,3 @@ spec:
       "sidecar.istio.io/inject": "true"
     annotations:
       "sidecar.istio.io/rewriteAppHTTPProbers": "true"
----
-apiVersion: serving.knative.dev/v1
-kind: Service
-metadata:
-  name: event-receiver-service
-  namespace: serverless-test-apps
-  annotations:
-    serving.knative.openshift.io/enablePassthrough: "true"
-spec:
-  template:
-    metadata:
-      annotations:
-        sidecar.istio.io/inject: "true"
-        sidecar.istio.io/rewriteAppHTTPProbers: "true"
-    spec:
-      containers:
-        - image: docker.io/meteatamel/event-display:v1
----
-apiVersion: sources.knative.dev/v1
-kind: PingSource
-metadata:
-  name: source
-spec:
-  schedule: "* * * * *"
-  data: '{"message": "Hello world from ping!"}'
-  sink:
-    ref:
-      apiVersion: serving.knative.dev/v1
-      kind: Service
-      name: event-receiver-service
